@@ -9,55 +9,65 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="ruRURAL"
+        android:text="RUrural"
+        android:textSize="24sp"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.125"
-        tools:layout_constraintRight_creator="1"
-        tools:layout_constraintLeft_creator="1" />
+        tools:layout_constraintLeft_creator="1"
+        tools:layout_constraintRight_creator="1" />
 
     <Button
         android:id="@+id/cadastroABtn"
-        android:layout_width="wrap_content"
+        android:layout_width="151dp"
         android:layout_height="wrap_content"
-        android:text="Cadastrar"
-        tools:layout_constraintRight_creator="1"
-        tools:layout_constraintBottom_creator="1"
-        app:layout_constraintBottom_toTopOf="@+id/saldoABtn"
-        android:layout_marginEnd="23dp"
-        app:layout_constraintRight_toRightOf="@+id/saldoABtn"
         android:layout_marginBottom="39dp"
-        android:layout_marginRight="24dp"
-        android:onClick="clickBtn"/>
+        android:onClick="clickBtn"
+        android:text="Cadastrar"
+        app:layout_constraintBottom_toTopOf="@+id/saldoABtn"
+        app:layout_constraintHorizontal_bias="0.501"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        tools:layout_constraintBottom_creator="1" />
 
     <Button
         android:id="@+id/saldoABtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Consultar Saldo"
-        tools:layout_constraintRight_creator="1"
-        tools:layout_constraintBottom_creator="1"
-        app:layout_constraintBottom_toTopOf="@+id/recargaABtn"
-        app:layout_constraintRight_toRightOf="parent"
-        tools:layout_constraintLeft_creator="1"
         android:layout_marginBottom="40dp"
+        android:onClick="clickBtn"
+        android:text="Consultar Saldo"
+        app:layout_constraintBottom_toTopOf="@+id/recargaABtn"
         app:layout_constraintLeft_toLeftOf="parent"
-        android:onClick="clickBtn"/>
+        app:layout_constraintRight_toRightOf="parent"
+        tools:layout_constraintBottom_creator="1"
+        tools:layout_constraintLeft_creator="1"
+        tools:layout_constraintRight_creator="1" />
 
     <Button
         android:id="@+id/recargaABtn"
+        android:layout_width="151dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="52dp"
+        android:onClick="clickBtn"
+        android:text="Recarregar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0.503"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        tools:layout_constraintBottom_creator="1" />
+
+    <Button
+        android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Recarregar"
-        tools:layout_constraintBottom_creator="1"
-        android:layout_marginStart="20dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        tools:layout_constraintLeft_creator="1"
-        android:layout_marginBottom="52dp"
-        app:layout_constraintLeft_toLeftOf="@+id/saldoABtn"
-        android:layout_marginLeft="19dp"
-        android:onClick="clickBtn"/>
+        android:onClick="clickBtn"
+        android:text="Publishing test"
+        tools:layout_editor_absoluteY="136dp"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

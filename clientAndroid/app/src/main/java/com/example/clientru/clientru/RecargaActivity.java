@@ -11,6 +11,7 @@ public class RecargaActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recarga);
 
+        getSupportActionBar().setTitle("Recarga");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
     }

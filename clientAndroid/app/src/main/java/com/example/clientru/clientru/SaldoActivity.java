@@ -12,6 +12,7 @@ public class SaldoActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_saldo);
 
+        getSupportActionBar().setTitle("Saldo");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
     }
