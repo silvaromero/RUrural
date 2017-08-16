@@ -1,147 +1,162 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-# FAZENDO OS IMPORTS NECESSARIOS PARA A APLICACAO
-
-import os
-import urlparse
+import json
+import sys
+import os, urlparse
 import paho.mqtt.client as mqtt
 import pymysql
-import cgitb
 from datetime import datetime
 
-# CONEXAO COM O BANCO - DATABASE, USUARIO, SENHA E HOST
+ipMV = sys.argv[1]
 
-conn = pymysql.connect(db='dbru', user='root', passwd='root',
-                       host='127.0.0.1')
-c = conn.cursor()
+conn = pymysql.connect(
+    db='dbru',
+    user='admin',
+    passwd='admin123',
+    host=ipMV)
 
-cgitb.enable()
+cursorBD = conn.cursor()
 
-
-# CODIGO DE CONSULTA AO BANCO
-
-# VERIFICA SE O RFID PASSADO EXISTE NO BANCO
-# SE SIM, RETORNA UMA LISTA CONTENDO NOME E ID DO USUARIO CADASTRADO
-# NAQUELE RFID
-
-def consulta(num):
-    retorno = {}
-    retorno['userId'] = 0
-    retorno['userName'] = ''
-    sql = "SELECT id,nome FROM Usuario WHERE rfid = '%s'" % num
-
-    c.execute(sql)
-
-    r = c.fetchall()
-
-    if len(r) > 0:
-        retorno['userId'] = int(r[0][0])
-        retorno['userName'] = r[0][1] + ''
-
-    return retorno
+queries = {}
+queries['nodeSaldo'] = "SELECT saldo FROM Usuario WHERE rfid = '%s'";
+queries['SALDO'] = "SELECT saldo FROM Usuario WHERE cpf = '%s'"
+queries['CADASTRO'] = "INSERT INTO Usuario (rfid, nome, cpf, saldo) VALUES ('%s', '%s', '%s', '%s')"
+queries['RECARGA'] = "UPDATE Usuario SET saldo = '%s' WHERE cpf = '%s'"
 
 
-# VERIFICA SE DADO USUARIO POSSUI REGISTRO ABERTO ASSOCIADO A SEU RFID
-# CASO NAO HAJA, O HORARIO E REGISTRADO E TEM SEU SATUS DEFINIDO COMO ABERTO (1).
-# CASO HAJA, O HORARIO E REGISTRADO E O STATUS DEFINIDO COMO FECHADO (0)
-
-# SOBREESCREVEMOS O COMPORTAMENTO DE ALGUMAS
-# FUNCOES PROPRIAS DO MQTT
-
-# EXECUTADA QUANDO UMA NOVA CONEXAO E FEITA
-
-def on_connect(
-    self,
-    mosq,
-    obj,
-    rc,
-    ):
-    print 'rc: ' + str(rc)
+#///////////
+# id  AI   /
+# rfid     /
+# nome     /
+# cpf      /
+# saldo    /
+#///////////
 
 
-# EXECUTADA QUANDO UMA NOVA MENSAGEM E LIDA NA FILA
-# PUBLICA NA FILA DE RESPOSTA SE O ACESSO FOI/NAO FOI LIBERADO
-# + O NOME DO CADASTRADO PARA EXIBICAO NO LCD
 
-def on_message(mosq, obj, msg):
-    print msg.topic + ' ' + str(msg.qos) + ' ' + str(msg.payload)
+# VERIFICA SE O RFID PASSADO EXISTE NO BANCO, SE SIM, RETORNA SALDO JÀ DESCONTADO
+def consultaNode(rfid):
+
+    #TO DO     Testar charset JSON
+    retornoJson = {}
+    saldoDescontado = 0.0
+    case = ""
+
+    queryConsultaNode = queries['nodeSaldo'] % (rfid)
+    cursorBD.execute(queryConsultaNode)
+    retornoQuery = cursorBD.fetchall()
+
+    if(len(retornoQuery) > 0):              #RFID válido
+        saldoAtual = float(retornoQuery[0][0])
+        if(datetime.now().hour < 16):       #Almoço
+            if(saldoAtual >= 2.00):
+                saldoDescontado = (saldoAtual - 2.00)
+                case = "sucesso_consultaNode"
+            else:
+                case = "erro_saldoInsuficienteNode"
+        else:                               #Jantar
+            if(saldoAtual >= 1.50):
+                saldoDescontado = (saldoAtual - 1.50)
+                case = "sucesso_consultaNode"
+            else:
+                case = "erro_saldoInsuficienteNode"
+    else:                                   #RFID inválido
+        case = "erro_usuarioInexistente"
+
+
+
+    if(case == "sucesso_consultaNode"):
+        retornoJson["STATUS"] = 0
+        retornoJson["saldoDescontado"] = saldoDescontado
+    elif(case == "erro_usuarioInexistente"):
+        retornoJson["STATUS"] = 1
+    elif(case == "erro_saldoInsuficienteNode"):
+        retornoJson["STATUS"] = 2
+
+    return retornoJson
+
+
+
+def consultaAndroid(parametro):
+    pass
+
+
+def on_connect_filaNode(self, mosq, obj, rc):
+    print("rc: " + str(rc))
+
+def on_message_filaNode(mosq, obj, msg):
+    print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
+
+    mensagemJson = json.loads(msg.payload)
+    rfid =  mensagemJson['RFID']
+
+    retornoJson = consultaNode(str(rfid))
+
+    mqttcFilaAndroid.publish("retornoNodeMCU", json.dumps(retornoJson))
+    print(retornoJson)
+
+def on_publish_filaNode(mosq, obj, mid):
+    print("Publish: " + str(mid))
+
+def on_subscribe_filaNode(mosq, obj, mid, granted_qos):
+    print("Subscribed: " + str(mid) + " " + str(granted_qos))
+
+def on_connect_filaAndroid(self, mosq, obj, rc):
+    print("rc: " + str(rc))
+
+
+def on_message_filaAndroid(mosq, obj, msg):
+    print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
 
     cons = consulta(str(msg.payload))
 
-    # print "cons J2 = %s" % cons
-
-    if cons['userName'] != '':
-
-        # retorno = registro(cons)
-
-        retorno = '%s' % cons
+    if(cons["userName"] != ""):
+    retornoNodeMCU = "%s" % cons
     else:
-        retorno = 'Usuario nao cadastrado.'
-    mqttc.publish('retorno', retorno)
-    print retorno
+        retornoNodeMCU = "Usuario nao cadastrado."
+    mqttcFilaAndroid.publish("retornoAndroid", retornoNodeMCU)
+    print(retornoNodeMCU)
+
+def on_publish_filaAndroid(mosq, obj, mid):
+    print("Publish: " + str(mid))
+
+def on_subscribe_filaAndroid(mosq, obj, mid, granted_qos):
+    print("Subscribed: " + str(mid) + " " + str(granted_qos))
+
+def on_log(mosq, obj, level, string):
+    print(string)
 
 
-# EXECUTADO A CADA PUBLICACAO
+mqttcFilaNode = mqtt.Client()
 
-def on_publish(mosq, obj, mid):
-    print 'Publish: J1' + str(mid)
+mqttcFilaAndroid = mqtt.Client()
 
+mqttcFilaNode.on_message = on_message_filaNode
+mqttcFilaNode.on_connect = on_connect_filaNode
+mqttcFilaNode.on_publish = on_publish_filaNode
+mqttcFilaNode.on_subscribe = on_subscribe_filaNode
 
-# EXECUTADO A CADA FILA QUE UM SUBSCRIBE E DADO
-
-def on_subscribe(
-    mosq,
-    obj,
-    mid,
-    granted_qos,
-    ):
-    print 'Subscribed: ' + str(mid) + ' ' + str(granted_qos)
+mqttcFilaAndroid.on_message = on_message_filaAndroid
+mqttcFilaAndroid.on_connect = on_connect_filaAndroid
+mqttcFilaAndroid.on_publish = on_publish_filaAndroid
+mqttcFilaAndroid.on_subscribe = on_subscribe_filaAndroid
 
 
-# EXECUTADO EM CADA ESCRITA NO LOG
-
-def on_log(
-    mosq,
-    obj,
-    level,
-    string,
-    ):
-    print string
-
-
-# CRIACAO DO OBJETO DO TIPO mqtt.Client
-
-mqttc = mqtt.Client()
-
-# SOBRESCRITA DOS METODOS NATIVOS DO MQTT
-
-mqttc.on_message = on_message
-mqttc.on_connect = on_connect
-mqttc.on_publish = on_publish
-mqttc.on_subscribe = on_subscribe
-
-# URL DO CLOUDMQTT E DA INSTANCIA AONDE AS FILAS ESTAO
-# A URL DA INSTANCIA E COMPOSTA POR: mqtt://m12.cloudmqtt.com: + PORTA
-# PORTA PODE SER ENCONTRADO NAS INFORMACOES DA INSTANCIA
-
-url_str = os.environ.get('m13.cloudmqtt.com',
-                         'mqtt://m13.cloudmqtt.com:13988')
+url_str = os.environ.get('m10.cloudmqtt.com','mqtt://m10.cloudmqtt.com:16184')
 url = urlparse.urlparse(url_str)
 
-# ATRIBUICAO DO USUARIO COM ACESSO AS FILAS
-# os parametros do username_pw_set sao os dados usuario e senha do MQTT
 
-mqttc.username_pw_set('adm', '54321')
-mqttc.connect(url.hostname, url.port)
+mqtFilaNode.username_pw_set("adm", "54321")
+mqttcFilaNode.connect(url.hostname, url.port)
+mqttcFilaAndroid.username_pw_set("adm", "54321")
+mqttcFilaAndroid.connect(url.hostname, url.port)
 
-# SUBSCRIBE NA FILA ACESSO
 
-mqttc.subscribe('acesso', 0)
+mqttcFilaNode.subscribe("acessoNodeMCU", 0)
+mqttcFilaAndroid.subscribe("acessoAndroid", 0)
 
-# LOOP ENQUANTO UM ERRO NAO FOR ENCONTRADO O NOSSO SERVIDOR ESTARA OUVINDO A FILA
-# ACESSO E ESCREVENDO AS RESPOSTAS NA FILA RETORNO
 
 rc = 0
 while rc == 0:
-    rc = mqttc.loop()
-print 'rc: ' + str(rc)
+    rcFilaNode = mqttcFilaNode.loop()
+    rcFilaAndroid = mqttcFilaAndroid.loop()       
+    rc = mqttcFilaNode.loop() + mqttcFilaAndroid.loop()
+print("rcFilaNode:" + str(rcFilaNode) + " | rcFilaAndroid:" + str(rcFilaAndroid) )

@@ -1,6 +1,6 @@
 ## Projeto da disciplina de infraestrutura de hardware
 
-Com o propósito de propocionar uma maior agilidade à entrada dos alunos no R.U.(Restaurante universitário)da UFRPE([Universidade Federal Rural de Pernambuco](http://www.ufrpe.br)), o projeto em questão propõe uma solução que consiste em identificar o aluno e debitar as taxas correspondentes às refeições ofertadas pelo restaurante.
+Com o propósito de propocionar uma maior agilidade à entrada dos alunos no R.U.(Restaurante universitário) da UFRPE([Universidade Federal Rural de Pernambuco](http://www.ufrpe.br)), o projeto em questão propõe uma solução que consiste em identificar o aluno e debitar as taxas correspondentes às refeições ofertadas pelo restaurante.
 
 Para viabilizar a construção do projeto, as seguintes tecnologias/recursos foram utilizadas:
   - NodeMCU;
