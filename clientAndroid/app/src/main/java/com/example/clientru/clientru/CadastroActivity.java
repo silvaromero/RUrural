@@ -56,13 +56,6 @@ public class CadastroActivity extends AppCompatActivity {
             @Override
             public void deliveryComplete(IMqttDeliveryToken token) {    }
         });
-
-//        final Button salvarBtn = (Button)findViewById(R.id.salvarBtn);
-//        salvarBtn.setOnClickListener(new View.OnClickListener() {
-//            public void onClick(View v) {
-//                publish();
-//            }
-//        });
     }
 
     public void publish(){
@@ -150,7 +143,6 @@ public class CadastroActivity extends AppCompatActivity {
         }
 
     }
-
 
     public void clickBtn(View view){
         if(view.getId() == R.id.salvarBtn){
