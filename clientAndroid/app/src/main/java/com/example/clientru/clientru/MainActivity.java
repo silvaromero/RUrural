@@ -35,11 +35,11 @@ public class MainActivity extends AppCompatActivity {
 
 
         String clientId = MqttClient.generateClientId();
-        client = new MqttAndroidClient(this.getApplicationContext(), "tcp://m13.cloudmqtt.com:13988",
+        client = new MqttAndroidClient(this.getApplicationContext(), "tcp://m11.cloudmqtt.com:12871",
                         clientId);
 
         options = new MqttConnectOptions();
-        options.setUserName("romero");
+        options.setUserName("igor");
         options.setPassword("123".toCharArray());
 
         connectMQTT();
