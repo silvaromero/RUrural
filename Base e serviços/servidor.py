@@ -5,21 +5,20 @@ import paho.mqtt.client as mqtt
 import pymysql
 from datetime import datetime
 
-ipMV = sys.argv[1]
 
 conn = pymysql.connect(
-    db='dbru',
-    user='admin',
-    passwd='admin123',
-    host=ipMV)
+    db     = 'rurural',
+    user   = 'root',
+    passwd = 'root',
+    host   = '127.0.0.1')
 
 cursorBD = conn.cursor()
 
-queries = {}
-queries['nodeSaldo'] = "SELECT saldo FROM Usuario WHERE rfid = '%s'";
-queries['SALDO'] = "SELECT saldo FROM Usuario WHERE cpf = '%s'"
-queries['CADASTRO'] = "INSERT INTO Usuario (rfid, nome, cpf, saldo) VALUES ('%s', '%s', '%s', '%s')"
-queries['RECARGA'] = "UPDATE Usuario SET saldo = '%s' WHERE cpf = '%s'"
+queries              = {}
+queries['nodeSaldo'] = "SELECT saldo FROM usuario WHERE rfid = '%s' AND cpf <> ''"
+queries['SALDO']     = "SELECT saldo FROM usuario WHERE cpf = '%s'"
+queries['CADASTRO']  = "INSERT INTO usuario (rfid, nome, cpf, saldo) VALUES ('%s', '%s', '%s', '%s')"
+queries['RECARGA']   = "UPDATE usuario SET saldo = '%s' WHERE cpf = '%s'"
 
 
 #///////////
@@ -30,42 +29,53 @@ queries['RECARGA'] = "UPDATE Usuario SET saldo = '%s' WHERE cpf = '%s'"
 # saldo    /
 #///////////
 
+def decrementaSaldo(valor, rfid):
+    queryDesconto = "UPDATE usuario SET saldo = %.2f WHERE rfid = '%s'" % (valor, rfid)
+    cursorBD.execute(queryDesconto)
+    conn.commit()
+    print(cursorBD._last_executed)
+    return
 
 
-# VERIFICA SE O RFID PASSADO EXISTE NO BANCO, SE SIM, RETORNA SALDO JÀ DESCONTADO
+
+# VERIFICA SE O RFID PASSADO EXISTE NO BANCO, SE SIM, RETORNA SALDO JA DESCONTADO
 def consultaNode(rfid):
 
-    #TO DO     Testar charset JSON
+    #TO DO     Testar charset JSON.
+    #TO DO     Decrementar sal na base.
+    #TO DO     Modificar caso para usuario inexistente, deve-ser verificar se os campos nome+cpf estao vazios.
     retornoJson = {}
-    saldoDescontado = 0.0
+    saldoDescontado = 0.00
     case = ""
 
     queryConsultaNode = queries['nodeSaldo'] % (rfid)
     cursorBD.execute(queryConsultaNode)
     retornoQuery = cursorBD.fetchall()
 
-    if(len(retornoQuery) > 0):              #RFID válido
+    if(len(retornoQuery) > 0):              #RFID valido
         saldoAtual = float(retornoQuery[0][0])
-        if(datetime.now().hour < 16):       #Almoço
+        if((datetime.now().hour-3) < 16):       #Almoco #Subtracao por tres dada a localizacao do servidor e o impacto do fuso horario
             if(saldoAtual >= 2.00):
                 saldoDescontado = (saldoAtual - 2.00)
+                decrementaSaldo(saldoDescontado, rfid)
                 case = "sucesso_consultaNode"
             else:
                 case = "erro_saldoInsuficienteNode"
         else:                               #Jantar
             if(saldoAtual >= 1.50):
                 saldoDescontado = (saldoAtual - 1.50)
+                decrementaSaldo(saldoDescontado, rfid)
                 case = "sucesso_consultaNode"
             else:
                 case = "erro_saldoInsuficienteNode"
-    else:                                   #RFID inválido
+    else:                                   #RFID invalido
         case = "erro_usuarioInexistente"
 
 
 
     if(case == "sucesso_consultaNode"):
         retornoJson["STATUS"] = 0
-        retornoJson["saldoDescontado"] = saldoDescontado
+        retornoJson["saldoDescontado"] = "%.2f" % saldoDescontado
     elif(case == "erro_usuarioInexistente"):
         retornoJson["STATUS"] = 1
     elif(case == "erro_saldoInsuficienteNode"):
@@ -78,19 +88,19 @@ def consultaNode(rfid):
 def consultaAndroid(parametro):
     pass
 
-
+#######Node
 def on_connect_filaNode(self, mosq, obj, rc):
     print("rc: " + str(rc))
 
 def on_message_filaNode(mosq, obj, msg):
     print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
 
-    mensagemJson = json.loads(msg.payload)
+    mensagemJson = json.loads(str(msg.payload))
     rfid =  mensagemJson['RFID']
 
     retornoJson = consultaNode(str(rfid))
 
-    mqttcFilaAndroid.publish("retornoNodeMCU", json.dumps(retornoJson))
+    mqttcFilaAndroid.publish("retornoNode", json.dumps(retornoJson))
     print(retornoJson)
 
 def on_publish_filaNode(mosq, obj, mid):
@@ -98,22 +108,15 @@ def on_publish_filaNode(mosq, obj, mid):
 
 def on_subscribe_filaNode(mosq, obj, mid, granted_qos):
     print("Subscribed: " + str(mid) + " " + str(granted_qos))
+#######Node
 
+
+#######Android
 def on_connect_filaAndroid(self, mosq, obj, rc):
     print("rc: " + str(rc))
 
-
 def on_message_filaAndroid(mosq, obj, msg):
-    print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
-
-    cons = consulta(str(msg.payload))
-
-    if(cons["userName"] != ""):
-    retornoNodeMCU = "%s" % cons
-    else:
-        retornoNodeMCU = "Usuario nao cadastrado."
-    mqttcFilaAndroid.publish("retornoAndroid", retornoNodeMCU)
-    print(retornoNodeMCU)
+    pass
 
 def on_publish_filaAndroid(mosq, obj, mid):
     print("Publish: " + str(mid))
@@ -123,7 +126,7 @@ def on_subscribe_filaAndroid(mosq, obj, mid, granted_qos):
 
 def on_log(mosq, obj, level, string):
     print(string)
-
+#######Android
 
 mqttcFilaNode = mqtt.Client()
 
@@ -140,23 +143,25 @@ mqttcFilaAndroid.on_publish = on_publish_filaAndroid
 mqttcFilaAndroid.on_subscribe = on_subscribe_filaAndroid
 
 
-url_str = os.environ.get('m10.cloudmqtt.com','mqtt://m10.cloudmqtt.com:16184')
+url_str = os.environ.get('m13.cloudmqtt.com','mqtt://m13.cloudmqtt.com:13988')
 url = urlparse.urlparse(url_str)
 
 
-mqtFilaNode.username_pw_set("adm", "54321")
+mqttcFilaNode.username_pw_set("romero", "123")
 mqttcFilaNode.connect(url.hostname, url.port)
-mqttcFilaAndroid.username_pw_set("adm", "54321")
+mqttcFilaAndroid.username_pw_set("romero", "123")
 mqttcFilaAndroid.connect(url.hostname, url.port)
 
 
-mqttcFilaNode.subscribe("acessoNodeMCU", 0)
+mqttcFilaNode.subscribe("acessoNode", 0)
 mqttcFilaAndroid.subscribe("acessoAndroid", 0)
 
 
-rc = 0
-while rc == 0:
+rcFilaNode = 0
+rcFilaAndroid = 0
+
+
+while rcFilaNode == 0 or rcFilaAndroid == 0:
     rcFilaNode = mqttcFilaNode.loop()
     rcFilaAndroid = mqttcFilaAndroid.loop()       
-    rc = mqttcFilaNode.loop() + mqttcFilaAndroid.loop()
 print("rcFilaNode:" + str(rcFilaNode) + " | rcFilaAndroid:" + str(rcFilaAndroid) )
