@@ -27,6 +27,8 @@ public class ConnectionManager {
     private static final int ERRO_RFID_INVALIDO = 4;
     private static final int SUCESSO_SALDO = 5;
     private static final int SUCESSO_RECARGA = 6;
+    private static final int ERRO_USUARIO_JA_CADASTRADO = 7;
+    private static final int ERRO_RFID_VINCULADO = 8;
 
     public ConnectionManager(Context mcontext){
         this.mContext = mcontext;
@@ -145,6 +147,12 @@ public class ConnectionManager {
                     break;
                 case ERRO_RFID_INVALIDO:
                     message = "RFID inválido!";
+                    break;
+                case ERRO_USUARIO_JA_CADASTRADO:
+                    message = "Usuário já cadastrado!";
+                    break;
+                case ERRO_RFID_VINCULADO:
+                    message = "RFID já vinculado a um usuário!";
                     break;
                 case SUCESSO_CADASTRO:
                     message = "Cadastro realizado com sucesso!";

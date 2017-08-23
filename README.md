@@ -12,6 +12,7 @@ Para viabilizar a construção do projeto, as seguintes tecnologias/recursos for
   - C/C++ (Programação do NodeMCU);
   - Java + XML (Cliente android);
   - Python (Serviço web);
+  - MySQL (SGBD);
   - SQL (Linguagem de consulta do banco de dados).
 
 A solução possui as seguintes funcionalidades:

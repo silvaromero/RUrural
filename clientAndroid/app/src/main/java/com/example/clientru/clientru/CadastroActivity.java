@@ -81,10 +81,9 @@ public class CadastroActivity extends AppCompatActivity implements ScreenConnect
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
+    protected void onDestroy() {
+        super.onDestroy();
         this.connectionManager.disconnectMQTT();
-        finish();
     }
 
     @Override

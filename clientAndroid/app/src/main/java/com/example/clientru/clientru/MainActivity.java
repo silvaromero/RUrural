@@ -1,37 +1,32 @@
 package com.example.clientru.clientru;
 
 import android.content.Intent;
+import android.net.ConnectivityManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 public class MainActivity extends AppCompatActivity{
-
-//    private ConnectionManager connectionManager;
-    /**TODO
-     *
-     * Organizar pacotes e separar classes de acordo com suas devidas responsabilidades
-     */
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        try{
-//            this.connectionManager = new ConnectionManager(MainActivity.this);
-//            this.connectionManager.setVisibleActivity(this);
-//            this.connectionManager.connectMQTT();
-//        }catch (Exception e){
-//            Toast.makeText(MainActivity.this, "Conexão não estabelecida!", Toast.LENGTH_LONG).show();
-//
-//        }
+        if(!isConnected()){
+            Button cadastroABtn = (Button) findViewById(R.id.cadastroABtn);
+            cadastroABtn.setEnabled(false);
 
+            Button saldoABtn = (Button) findViewById(R.id.saldoABtn);
+            saldoABtn.setEnabled(false);
+
+            Button recargaABtn = (Button) findViewById(R.id.recargaABtn);
+            recargaABtn.setEnabled(false);
+
+            Toast.makeText(MainActivity.this, "Conecte-se à internet para ter acesso às funcionalidades!", Toast.LENGTH_LONG).show();
+        }
     }
 
     public void clickBtn(View view){
@@ -48,28 +43,18 @@ public class MainActivity extends AppCompatActivity{
             Intent intent = new Intent(this, RecargaActivity.class);
             startActivity(intent);
         }
-//        if(view.getId() == R.id.button){
-//            JSONObject json = new JSONObject();
-//
-//            try {
-//                json.put("RFID", "123123");
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//
-//            this.connectionManager.publish(json);
-//        }
     }
 
-//    @Override
-//    public void showMessage(String message) {
-//        Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
-//    }
-
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-//        this.connectionManager.disconnectMQTT();
+    public  boolean isConnected() {
+        boolean connected;
+        ConnectivityManager conectivtyManager = (ConnectivityManager) getSystemService(MainActivity.CONNECTIVITY_SERVICE);
+        if (conectivtyManager.getActiveNetworkInfo() != null
+                && conectivtyManager.getActiveNetworkInfo().isAvailable()
+                && conectivtyManager.getActiveNetworkInfo().isConnected()) {
+            connected = true;
+        } else {
+            connected = false;
+        }
+        return connected;
     }
 }
